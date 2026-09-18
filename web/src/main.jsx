@@ -27,7 +27,7 @@ function App() {
   const [files, setFiles] = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(null);
   const fileInputRef = useRef(null);
 
   const api = useMemo(() => createApi(token), [token]);
@@ -52,8 +52,8 @@ function App() {
   }, [user]);
 
   useEffect(() => {
-    if (!notice) return;
-    const timeout = window.setTimeout(() => setNotice(""), 4000);
+    if (notice?.type !== "error") return;
+    const timeout = window.setTimeout(() => setNotice(null), 6000);
     return () => window.clearTimeout(timeout);
   }, [notice]);
 
@@ -97,9 +97,11 @@ function App() {
     setLoadingFiles(true);
     try {
       const result = await api.listFiles();
-      setFiles(result.files || []);
+      const nextFiles = result.files || [];
+      setFiles(nextFiles);
+      setNotice((current) => clearResolvedNotice(current, nextFiles));
     } catch (error) {
-      setNotice(error.message);
+      setNotice({ type: "error", message: error.message });
     } finally {
       setLoadingFiles(false);
     }
@@ -110,13 +112,13 @@ function App() {
     if (!selected) return;
 
     setUploading(true);
-    setNotice("");
+    setNotice(null);
     try {
-      await api.uploadFile(selected);
+      const file = await api.uploadFile(selected);
       await loadFiles();
-      setNotice("Upload queued for processing.");
+      setNotice({ type: "upload", fileId: file.id, message: "Upload queued for processing." });
     } catch (error) {
-      setNotice(error.message);
+      setNotice({ type: "error", message: error.message });
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -124,13 +126,13 @@ function App() {
   }
 
   async function deleteFile(fileID) {
-    setNotice("");
+    setNotice(null);
     try {
       await api.deleteFile(fileID);
       await loadFiles();
-      setNotice("Delete queued.");
+      setNotice({ type: "delete", fileId: fileID, message: "Delete queued." });
     } catch (error) {
-      setNotice(error.message);
+      setNotice({ type: "error", message: error.message });
     }
   }
 
@@ -207,7 +209,7 @@ function App() {
           {uploading ? <Loader2 size={18} className="spin" /> : <Upload size={18} />}
           Upload file
         </button>
-        {notice && <p className="notice">{notice}</p>}
+        {notice && <p className={`notice ${notice.type}`}>{notice.message}</p>}
       </section>
 
       <section className="file-table" aria-label="Files">
@@ -300,6 +302,15 @@ function formatBytes(bytes) {
 
 function shortChecksum(checksum) {
   return `${checksum.slice(0, 10)}...${checksum.slice(-6)}`;
+}
+
+function clearResolvedNotice(notice, files) {
+  if (!notice || notice.type === "error") return notice;
+
+  const file = files.find((item) => item.id === notice.fileId);
+  if (notice.type === "delete" && !file) return null;
+  if (notice.type === "upload" && file && file.status !== "pending") return null;
+  return notice;
 }
 
 function checksumLabel(file) {

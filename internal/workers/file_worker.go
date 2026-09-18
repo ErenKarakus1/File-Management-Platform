@@ -16,47 +16,59 @@ import (
 )
 
 type FileWorker struct {
-	files        *repository.FileRepository
-	workerCount  int
-	pollInterval time.Duration
+	files                 *repository.FileRepository
+	processingWorkerCount int
+	deleteWorkerCount     int
+	pollInterval          time.Duration
 }
 
-func NewFileWorker(files *repository.FileRepository, workerCount int, pollInterval time.Duration) *FileWorker {
-	if workerCount < 1 {
-		workerCount = 1
+func NewFileWorker(files *repository.FileRepository, processingWorkerCount int, deleteWorkerCount int, pollInterval time.Duration) *FileWorker {
+	if processingWorkerCount < 1 {
+		processingWorkerCount = 1
+	}
+	if deleteWorkerCount < 1 {
+		deleteWorkerCount = 1
 	}
 	if pollInterval <= 0 {
 		pollInterval = time.Second
 	}
 
 	return &FileWorker{
-		files:        files,
-		workerCount:  workerCount,
-		pollInterval: pollInterval,
+		files:                 files,
+		processingWorkerCount: processingWorkerCount,
+		deleteWorkerCount:     deleteWorkerCount,
+		pollInterval:          pollInterval,
 	}
 }
 
 func (w *FileWorker) Start(ctx context.Context) func() {
 	var wg sync.WaitGroup
-	for i := 0; i < w.workerCount; i++ {
+	for i := 0; i < w.processingWorkerCount; i++ {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			w.run(ctx, workerID)
+			w.runProcessing(ctx, workerID)
+		}(i + 1)
+	}
+	for i := 0; i < w.deleteWorkerCount; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			w.runDeleting(ctx, workerID)
 		}(i + 1)
 	}
 
 	return wg.Wait
 }
 
-func (w *FileWorker) run(ctx context.Context, workerID int) {
+func (w *FileWorker) runProcessing(ctx context.Context, workerID int) {
 	ticker := time.NewTicker(w.pollInterval)
 	defer ticker.Stop()
 
 	for {
-		if err := w.processNext(ctx); err != nil {
+		if err := w.processNextPending(ctx); err != nil {
 			if !errors.Is(err, repository.ErrPendingFileNotFound) && !errors.Is(err, context.Canceled) {
-				log.Printf("file worker %d: %v", workerID, err)
+				log.Printf("file processing worker %d: %v", workerID, err)
 			}
 		}
 
@@ -68,13 +80,26 @@ func (w *FileWorker) run(ctx context.Context, workerID int) {
 	}
 }
 
-func (w *FileWorker) processNext(ctx context.Context) error {
-	if err := w.processNextDelete(ctx); err == nil {
-		return nil
-	} else if !errors.Is(err, repository.ErrFileNotFound) {
-		return err
-	}
+func (w *FileWorker) runDeleting(ctx context.Context, workerID int) {
+	ticker := time.NewTicker(w.pollInterval)
+	defer ticker.Stop()
 
+	for {
+		if err := w.processNextDelete(ctx); err != nil {
+			if !errors.Is(err, repository.ErrFileNotFound) && !errors.Is(err, context.Canceled) {
+				log.Printf("file delete worker %d: %v", workerID, err)
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+func (w *FileWorker) processNextPending(ctx context.Context) error {
 	file, err := w.files.ClaimPending(ctx)
 	if err != nil {
 		return err

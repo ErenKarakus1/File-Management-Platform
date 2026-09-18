@@ -42,7 +42,7 @@ func main() {
 	fileRepository := repository.NewFileRepository(db)
 	fileService := files.NewService(fileRepository, cfg.FileStorageDir)
 	fileHandler := files.NewHandler(fileService, cfg.MaxUploadBytes)
-	fileWorker := workers.NewFileWorker(fileRepository, cfg.FileWorkerCount, cfg.FileWorkerPoll)
+	fileWorker := workers.NewFileWorker(fileRepository, cfg.FileWorkerCount, cfg.FileDeleteWorkerCount, cfg.FileWorkerPoll)
 	waitForFileWorkers := fileWorker.Start(ctx)
 	router := server.New(authService, fileHandler, rateLimiter.Middleware())
 

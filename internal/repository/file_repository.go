@@ -26,7 +26,7 @@ func (r *FileRepository) Create(ctx context.Context, file models.File) (models.F
 		file.StoragePath,
 		file.ContentType,
 		file.SizeBytes,
-		file.ChecksumStatus,
+		file.Status,
 	).Scan(
 		&file.ID,
 		&file.OwnerID,
@@ -35,7 +35,7 @@ func (r *FileRepository) Create(ctx context.Context, file models.File) (models.F
 		&file.ContentType,
 		&file.SizeBytes,
 		&file.ChecksumSHA256,
-		&file.ChecksumStatus,
+		&file.Status,
 		&file.CreatedAt,
 		&file.UpdatedAt,
 	)
@@ -60,7 +60,7 @@ func (r *FileRepository) ListByOwner(ctx context.Context, ownerID uuid.UUID) ([]
 			&file.ContentType,
 			&file.SizeBytes,
 			&file.ChecksumSHA256,
-			&file.ChecksumStatus,
+			&file.Status,
 			&file.CreatedAt,
 			&file.UpdatedAt,
 		); err != nil {

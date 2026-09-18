@@ -6,7 +6,7 @@ create table if not exists files (
 	content_type text not null,
 	size_bytes bigint not null check (size_bytes > 0),
 	checksum_sha256 text,
-	checksum_status text not null default 'pending',
+	status text not null default 'pending',
 	created_at timestamptz not null default now(),
 	updated_at timestamptz not null default now()
 );

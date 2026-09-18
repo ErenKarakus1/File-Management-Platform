@@ -8,7 +8,7 @@ const createFileQuery = `
 		storage_path,
 		content_type,
 		size_bytes,
-		checksum_status
+		status
 	)
 	values ($1, $2, $3, $4, $5, $6, $7)
 	returning
@@ -19,7 +19,7 @@ const createFileQuery = `
 		content_type,
 		size_bytes,
 		checksum_sha256,
-		checksum_status,
+		status,
 		created_at,
 		updated_at
 `
@@ -33,7 +33,7 @@ const listFilesByOwnerQuery = `
 		content_type,
 		size_bytes,
 		checksum_sha256,
-		checksum_status,
+		status,
 		created_at,
 		updated_at
 	from files

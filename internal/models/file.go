@@ -14,7 +14,7 @@ type File struct {
 	ContentType    string    `json:"content_type"`
 	SizeBytes      int64     `json:"size_bytes"`
 	ChecksumSHA256 *string   `json:"checksum_sha256"`
-	ChecksumStatus string    `json:"checksum_status"`
+	Status         string    `json:"status"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }

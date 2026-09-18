@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const ChecksumStatusPending = "pending"
+const StatusPending = "pending"
 
 var ErrEmptyFile = errors.New("file is empty")
 
@@ -82,13 +82,13 @@ func (s *Service) Upload(ctx context.Context, ownerID uuid.UUID, header *multipa
 	}
 
 	file := models.File{
-		ID:             fileID,
-		OwnerID:        ownerID,
-		OriginalName:   sanitizeOriginalName(header.Filename),
-		StoragePath:    storagePath,
-		ContentType:    contentType,
-		SizeBytes:      size,
-		ChecksumStatus: ChecksumStatusPending,
+		ID:           fileID,
+		OwnerID:      ownerID,
+		OriginalName: sanitizeOriginalName(header.Filename),
+		StoragePath:  storagePath,
+		ContentType:  contentType,
+		SizeBytes:    size,
+		Status:       StatusPending,
 	}
 
 	created, err := s.files.Create(ctx, file)

@@ -108,12 +108,14 @@ function App() {
     }
   }
 
-  async function uploadFile(event) {
-    const selected = event.target.files?.[0];
-    if (!selected) return;
+  async function uploadFiles(event) {
+    const selectedFiles = Array.from(event.target.files || []);
+    if (selectedFiles.length === 0) return;
 
-    if (selected.size > maxUploadBytes) {
-      setNotice({ type: "error", message: `File is too large. Max upload size is ${formatBytes(maxUploadBytes)}.` });
+    const validFiles = selectedFiles.filter((file) => file.size <= maxUploadBytes);
+    const skippedCount = selectedFiles.length - validFiles.length;
+    if (validFiles.length === 0) {
+      setNotice({ type: "error", message: `No files uploaded. Max file size is ${formatBytes(maxUploadBytes)}.` });
       event.target.value = "";
       return;
     }
@@ -121,9 +123,12 @@ function App() {
     setUploading(true);
     setNotice(null);
     try {
-      const file = await api.uploadFile(selected);
+      const uploadedFiles = [];
+      for (const file of validFiles) {
+        uploadedFiles.push(await api.uploadFile(file));
+      }
       await loadFiles();
-      setNotice({ type: "upload", fileId: file.id, message: "Upload queued for processing." });
+      setNotice(uploadNotice(uploadedFiles, skippedCount));
     } catch (error) {
       setNotice({ type: "error", message: error.message });
     } finally {
@@ -220,10 +225,10 @@ function App() {
       </header>
 
       <section className="toolbar">
-        <input ref={fileInputRef} type="file" onChange={uploadFile} hidden />
+        <input ref={fileInputRef} type="file" onChange={uploadFiles} multiple hidden />
         <button className="primary-button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
           {uploading ? <Loader2 size={18} className="spin" /> : <Upload size={18} />}
-          Upload file
+          Upload files
         </button>
         {notice && <p className={`notice ${notice.type}`}>{notice.message}</p>}
       </section>
@@ -342,10 +347,26 @@ function shortChecksum(checksum) {
 function clearResolvedNotice(notice, files) {
   if (!notice || notice.type === "error") return notice;
 
-  const file = files.find((item) => item.id === notice.fileId);
-  if (notice.type === "delete" && !file) return null;
-  if (notice.type === "upload" && file && file.status !== "pending") return null;
+  if (notice.type === "delete") {
+    const file = files.find((item) => item.id === notice.fileId);
+    return file ? notice : null;
+  }
+  if (notice.type === "upload") {
+    const pendingFiles = files.filter((item) => notice.fileIds?.includes(item.id) && item.status === "pending");
+    return pendingFiles.length > 0 ? notice : null;
+  }
   return notice;
+}
+
+function uploadNotice(files, skippedCount) {
+  const uploadedCount = files.length;
+  const uploadedText = uploadedCount === 1 ? "1 file queued for processing." : `${uploadedCount} files queued for processing.`;
+  const skippedText = skippedCount > 0 ? ` ${skippedCount} skipped over ${formatBytes(maxUploadBytes)}.` : "";
+  return {
+    type: "upload",
+    fileIds: files.map((file) => file.id),
+    message: uploadedText + skippedText,
+  };
 }
 
 function checksumLabel(file) {

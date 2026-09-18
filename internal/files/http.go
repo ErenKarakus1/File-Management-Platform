@@ -118,6 +118,10 @@ func (h *Handler) Download(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "file is not ready"})
 			return
 		}
+		if errors.Is(err, ErrFileMissing) {
+			c.JSON(http.StatusGone, gin.H{"error": "file is missing from storage"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not download file"})
 		return
 	}

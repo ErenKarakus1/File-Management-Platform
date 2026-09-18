@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -99,6 +100,7 @@ func (w *FileWorker) processNextDelete(ctx context.Context) error {
 	if err := os.Remove(file.StoragePath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
+	_ = os.Remove(filepath.Dir(file.StoragePath))
 
 	return w.files.DeleteByIDAndOwner(ctx, file.ID, file.OwnerID)
 }

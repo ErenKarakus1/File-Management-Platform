@@ -26,6 +26,7 @@ const (
 
 var ErrEmptyFile = errors.New("file is empty")
 var ErrFileNotReady = errors.New("file is not ready")
+var ErrFileMissing = errors.New("file is missing from storage")
 
 type Service struct {
 	files      *repository.FileRepository
@@ -121,6 +122,13 @@ func (s *Service) GetDownload(ctx context.Context, ownerID uuid.UUID, fileID uui
 	}
 	if file.Status != StatusReady {
 		return models.File{}, ErrFileNotReady
+	}
+	if _, err := os.Stat(file.StoragePath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			_ = s.files.MarkFailed(ctx, file.ID)
+			return models.File{}, ErrFileMissing
+		}
+		return models.File{}, err
 	}
 	return file, nil
 }

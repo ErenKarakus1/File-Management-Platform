@@ -1,4 +1,5 @@
 .env
+storage/
 
 bin/
 tmp/

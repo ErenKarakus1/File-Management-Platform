@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/ErenKarakus1/File-Management-Platform/internal/auth"
+	"github.com/ErenKarakus1/File-Management-Platform/internal/files"
 
 	"github.com/gin-gonic/gin"
 )
 
-func New(authService *auth.Service) *gin.Engine {
+func New(authService *auth.Service, fileHandler *files.Handler) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
@@ -25,6 +26,8 @@ func New(authService *auth.Service) *gin.Engine {
 	protected := api.Group("")
 	protected.Use(auth.Middleware(authService))
 	protected.GET("/auth/me", auth.Me)
+	protected.POST("/files", fileHandler.Upload)
+	protected.GET("/files", fileHandler.List)
 
 	return router
 }

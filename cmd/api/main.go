@@ -12,6 +12,8 @@ import (
 	"github.com/ErenKarakus1/File-Management-Platform/internal/auth"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/config"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/database"
+	"github.com/ErenKarakus1/File-Management-Platform/internal/files"
+	"github.com/ErenKarakus1/File-Management-Platform/internal/repository"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/server"
 )
 
@@ -28,7 +30,10 @@ func main() {
 	defer db.Close()
 
 	authService := auth.NewService(db, cfg.JWTSecret, cfg.TokenTTL)
-	router := server.New(authService)
+	fileRepository := repository.NewFileRepository(db)
+	fileService := files.NewService(fileRepository, cfg.FileStorageDir)
+	fileHandler := files.NewHandler(fileService, cfg.MaxUploadBytes)
+	router := server.New(authService, fileHandler)
 
 	srv := &http.Server{
 		Addr:         cfg.HTTPAddr,

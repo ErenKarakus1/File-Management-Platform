@@ -18,6 +18,7 @@ import "./styles.css";
 
 const API_BASE = "/api/v1";
 const tokenKey = "fmp_access_token";
+const maxUploadBytes = 50 * 1024 * 1024;
 
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem(tokenKey) || "");
@@ -110,6 +111,12 @@ function App() {
   async function uploadFile(event) {
     const selected = event.target.files?.[0];
     if (!selected) return;
+
+    if (selected.size > maxUploadBytes) {
+      setNotice({ type: "error", message: `File is too large. Max upload size is ${formatBytes(maxUploadBytes)}.` });
+      event.target.value = "";
+      return;
+    }
 
     setUploading(true);
     setNotice(null);

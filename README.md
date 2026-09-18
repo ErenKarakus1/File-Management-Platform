@@ -92,6 +92,7 @@ file-management-platform/
 * Startup database migrations
 * React file manager UI
 * Dockerized full stack
+* Atomic PostgreSQL job claiming with `FOR UPDATE SKIP LOCKED`
 
 ---
 

@@ -24,6 +24,7 @@ const (
 )
 
 var ErrEmptyFile = errors.New("file is empty")
+var ErrFileNotReady = errors.New("file is not ready")
 
 type Service struct {
 	files      *repository.FileRepository
@@ -106,6 +107,17 @@ func (s *Service) Upload(ctx context.Context, ownerID uuid.UUID, header *multipa
 
 func (s *Service) List(ctx context.Context, ownerID uuid.UUID) ([]models.File, error) {
 	return s.files.ListByOwner(ctx, ownerID)
+}
+
+func (s *Service) GetDownload(ctx context.Context, ownerID uuid.UUID, fileID uuid.UUID) (models.File, error) {
+	file, err := s.files.GetByIDAndOwner(ctx, fileID, ownerID)
+	if err != nil {
+		return models.File{}, err
+	}
+	if file.Status != StatusReady {
+		return models.File{}, ErrFileNotReady
+	}
+	return file, nil
 }
 
 func sanitizeOriginalName(name string) string {

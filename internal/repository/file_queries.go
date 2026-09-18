@@ -43,6 +43,23 @@ const listFilesByOwnerQuery = `
 	order by created_at desc
 `
 
+const getFileByIDAndOwnerQuery = `
+	select
+		id,
+		owner_id,
+		original_name,
+		storage_path,
+		content_type,
+		size_bytes,
+		checksum_sha256,
+		status,
+		processed_at,
+		created_at,
+		updated_at
+	from files
+	where id = $1 and owner_id = $2
+`
+
 const claimPendingFileQuery = `
 	update files
 	set status = 'processing',

@@ -10,7 +10,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var ErrPendingFileNotFound = errors.New("pending file not found")
+var (
+	ErrFileNotFound        = errors.New("file not found")
+	ErrPendingFileNotFound = errors.New("pending file not found")
+)
 
 type FileRepository struct {
 	db *pgxpool.Pool
@@ -53,6 +56,18 @@ func (r *FileRepository) ClaimPending(ctx context.Context) (models.File, error) 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.File{}, ErrPendingFileNotFound
+		}
+		return models.File{}, err
+	}
+	return file, nil
+}
+
+func (r *FileRepository) GetByIDAndOwner(ctx context.Context, id uuid.UUID, ownerID uuid.UUID) (models.File, error) {
+	var file models.File
+	err := scanFile(r.db.QueryRow(ctx, getFileByIDAndOwnerQuery, id, ownerID), &file)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.File{}, ErrFileNotFound
 		}
 		return models.File{}, err
 	}

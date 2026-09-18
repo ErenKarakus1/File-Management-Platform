@@ -67,7 +67,8 @@ function App() {
     event.preventDefault();
     setAuthError("");
 
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       email: form.get("email"),
       password: form.get("password"),
@@ -80,7 +81,7 @@ function App() {
       const result = authMode === "register" ? await api.register(payload) : await api.login(payload);
       saveToken(result.access_token);
       setUser(result.user);
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (error) {
       setAuthError(error.message);
     }

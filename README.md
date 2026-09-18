@@ -144,6 +144,9 @@ sequenceDiagram
     Worker->>DB: status=ready, checksum_sha256=value
 ```
 
+
+Processing workers claim pending files atomically from PostgreSQL so multiple workers cannot process the same file concurrently. The claim operation uses row-level locking with `FOR UPDATE SKIP LOCKED`, allowing workers to safely process different pending files in parallel without blocking each other.
+
 Delete workers run separately from processing workers so delete jobs and processing jobs do not starve each other.
 
 ---

@@ -136,6 +136,15 @@ function App() {
     }
   }
 
+  async function downloadFile(file) {
+    setNotice(null);
+    try {
+      await api.downloadFile(file);
+    } catch (error) {
+      setNotice({ type: "error", message: error.message });
+    }
+  }
+
   if (!token || !user) {
     return (
       <main className="auth-shell">
@@ -239,9 +248,9 @@ function App() {
               <span>{formatBytes(file.size_bytes)}</span>
               <code title={file.checksum_sha256 || ""}>{checksumLabel(file)}</code>
               <div className="row-actions">
-                <a className={`icon-button ${file.status !== "ready" ? "disabled" : ""}`} title="Download file" href={file.status === "ready" ? `${API_BASE}/files/${file.id}/download` : undefined}>
+                <button className="icon-button" title="Download file" onClick={() => downloadFile(file)} disabled={file.status !== "ready"}>
                   <Download size={18} />
-                </a>
+                </button>
                 <button className="icon-button danger" title="Delete file" onClick={() => deleteFile(file.id)} disabled={file.status === "deleting"}>
                   <Trash2 size={18} />
                 </button>
@@ -289,6 +298,25 @@ function createApi(token) {
       const body = new FormData();
       body.append("file", file);
       return request("/files", { method: "POST", body });
+    },
+    downloadFile: async (file) => {
+      const response = await fetch(`${API_BASE}/files/${file.id}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Download failed");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.original_name || "download";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     },
     deleteFile: (id) => request(`/files/${id}`, { method: "DELETE" }),
   };

@@ -17,6 +17,11 @@ type Config struct {
 	MaxUploadBytes  int64
 	FileWorkerCount int
 	FileWorkerPoll  time.Duration
+	RedisAddr       string
+	RedisPassword   string
+	RedisDB         int
+	RateLimit       int
+	RateLimitWindow time.Duration
 }
 
 func Load() Config {
@@ -31,6 +36,11 @@ func Load() Config {
 		MaxUploadBytes:  getInt64Env("MAX_UPLOAD_BYTES", 50<<20),
 		FileWorkerCount: getIntEnv("FILE_WORKER_COUNT", 2),
 		FileWorkerPoll:  getDurationEnv("FILE_WORKER_POLL", time.Second),
+		RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisPassword:   getEnv("REDIS_PASSWORD", ""),
+		RedisDB:         getIntEnv("REDIS_DB", 0),
+		RateLimit:       getIntEnv("RATE_LIMIT", 120),
+		RateLimitWindow: getDurationEnv("RATE_LIMIT_WINDOW", time.Minute),
 	}
 }
 

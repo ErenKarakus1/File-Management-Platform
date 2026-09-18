@@ -9,9 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func New(authService *auth.Service, fileHandler *files.Handler) *gin.Engine {
+func New(authService *auth.Service, fileHandler *files.Handler, rateLimit gin.HandlerFunc) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(rateLimit)
 
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})

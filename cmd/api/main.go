@@ -13,6 +13,7 @@ import (
 	"github.com/ErenKarakus1/File-Management-Platform/internal/config"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/database"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/files"
+	"github.com/ErenKarakus1/File-Management-Platform/internal/ratelimit"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/repository"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/server"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/workers"
@@ -30,13 +31,20 @@ func main() {
 	}
 	defer db.Close()
 
+	redisClient := ratelimit.NewRedisClient(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
+	rateLimiter := ratelimit.NewLimiter(redisClient, cfg.RateLimit, cfg.RateLimitWindow)
+	if err := rateLimiter.Ping(ctx); err != nil {
+		log.Fatalf("connect redis: %v", err)
+	}
+	defer rateLimiter.Close()
+
 	authService := auth.NewService(db, cfg.JWTSecret, cfg.TokenTTL)
 	fileRepository := repository.NewFileRepository(db)
 	fileService := files.NewService(fileRepository, cfg.FileStorageDir)
 	fileHandler := files.NewHandler(fileService, cfg.MaxUploadBytes)
 	fileWorker := workers.NewFileWorker(fileRepository, cfg.FileWorkerCount, cfg.FileWorkerPoll)
 	waitForFileWorkers := fileWorker.Start(ctx)
-	router := server.New(authService, fileHandler)
+	router := server.New(authService, fileHandler, rateLimiter.Middleware())
 
 	srv := &http.Server{
 		Addr:         cfg.HTTPAddr,

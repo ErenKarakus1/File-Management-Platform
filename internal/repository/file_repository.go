@@ -75,13 +75,36 @@ func (r *FileRepository) GetByIDAndOwner(ctx context.Context, id uuid.UUID, owne
 }
 
 func (r *FileRepository) MarkReady(ctx context.Context, id uuid.UUID, checksumSHA256 string) error {
-	_, err := r.db.Exec(ctx, markFileReadyQuery, id, checksumSHA256)
-	return err
+	result, err := r.db.Exec(ctx, markFileReadyQuery, id, checksumSHA256)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrFileNotFound
+	}
+	return nil
 }
 
 func (r *FileRepository) MarkFailed(ctx context.Context, id uuid.UUID) error {
-	_, err := r.db.Exec(ctx, markFileFailedQuery, id)
-	return err
+	result, err := r.db.Exec(ctx, markFileFailedQuery, id)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrFileNotFound
+	}
+	return nil
+}
+
+func (r *FileRepository) DeleteByIDAndOwner(ctx context.Context, id uuid.UUID, ownerID uuid.UUID) error {
+	result, err := r.db.Exec(ctx, deleteFileByIDAndOwnerQuery, id, ownerID)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrFileNotFound
+	}
+	return nil
 }
 
 func (r *FileRepository) ListByOwner(ctx context.Context, ownerID uuid.UUID) ([]models.File, error) {

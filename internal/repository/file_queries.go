@@ -60,6 +60,11 @@ const getFileByIDAndOwnerQuery = `
 	where id = $1 and owner_id = $2
 `
 
+const deleteFileByIDAndOwnerQuery = `
+	delete from files
+	where id = $1 and owner_id = $2
+`
+
 const claimPendingFileQuery = `
 	update files
 	set status = 'processing',

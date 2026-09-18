@@ -120,6 +120,19 @@ func (s *Service) GetDownload(ctx context.Context, ownerID uuid.UUID, fileID uui
 	return file, nil
 }
 
+func (s *Service) Delete(ctx context.Context, ownerID uuid.UUID, fileID uuid.UUID) error {
+	file, err := s.files.GetByIDAndOwner(ctx, fileID, ownerID)
+	if err != nil {
+		return err
+	}
+
+	if err := os.Remove(file.StoragePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	return s.files.DeleteByIDAndOwner(ctx, fileID, ownerID)
+}
+
 func sanitizeOriginalName(name string) string {
 	base := filepath.Base(strings.TrimSpace(name))
 	if base == "." || base == string(filepath.Separator) || base == "" {

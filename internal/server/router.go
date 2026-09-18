@@ -29,6 +29,7 @@ func New(authService *auth.Service, fileHandler *files.Handler) *gin.Engine {
 	protected.POST("/files", fileHandler.Upload)
 	protected.GET("/files", fileHandler.List)
 	protected.GET("/files/:id/download", fileHandler.Download)
+	protected.DELETE("/files/:id", fileHandler.Delete)
 
 	return router
 }

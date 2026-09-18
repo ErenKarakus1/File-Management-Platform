@@ -15,6 +15,7 @@ import (
 	"github.com/ErenKarakus1/File-Management-Platform/internal/files"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/repository"
 	"github.com/ErenKarakus1/File-Management-Platform/internal/server"
+	"github.com/ErenKarakus1/File-Management-Platform/internal/workers"
 )
 
 func main() {
@@ -33,6 +34,8 @@ func main() {
 	fileRepository := repository.NewFileRepository(db)
 	fileService := files.NewService(fileRepository, cfg.FileStorageDir)
 	fileHandler := files.NewHandler(fileService, cfg.MaxUploadBytes)
+	fileWorker := workers.NewFileWorker(fileRepository, cfg.FileWorkerCount, cfg.FileWorkerPoll)
+	waitForFileWorkers := fileWorker.Start(ctx)
 	router := server.New(authService, fileHandler)
 
 	srv := &http.Server{
@@ -57,4 +60,5 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("shutdown: %v", err)
 	}
+	waitForFileWorkers()
 }

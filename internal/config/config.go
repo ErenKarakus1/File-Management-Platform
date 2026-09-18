@@ -9,24 +9,28 @@ import (
 )
 
 type Config struct {
-	HTTPAddr       string
-	DatabaseURL    string
-	JWTSecret      string
-	TokenTTL       time.Duration
-	FileStorageDir string
-	MaxUploadBytes int64
+	HTTPAddr        string
+	DatabaseURL     string
+	JWTSecret       string
+	TokenTTL        time.Duration
+	FileStorageDir  string
+	MaxUploadBytes  int64
+	FileWorkerCount int
+	FileWorkerPoll  time.Duration
 }
 
 func Load() Config {
 	_ = godotenv.Load()
 
 	return Config{
-		HTTPAddr:       getEnv("HTTP_ADDR", ":8080"),
-		DatabaseURL:    getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/file_management?sslmode=disable"),
-		JWTSecret:      getEnv("JWT_SECRET", "dev-secret-change-me"),
-		TokenTTL:       getDurationEnv("TOKEN_TTL", 24*time.Hour),
-		FileStorageDir: getEnv("FILE_STORAGE_DIR", "storage"),
-		MaxUploadBytes: getInt64Env("MAX_UPLOAD_BYTES", 50<<20),
+		HTTPAddr:        getEnv("HTTP_ADDR", ":8080"),
+		DatabaseURL:     getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/file_management?sslmode=disable"),
+		JWTSecret:       getEnv("JWT_SECRET", "dev-secret-change-me"),
+		TokenTTL:        getDurationEnv("TOKEN_TTL", 24*time.Hour),
+		FileStorageDir:  getEnv("FILE_STORAGE_DIR", "storage"),
+		MaxUploadBytes:  getInt64Env("MAX_UPLOAD_BYTES", 50<<20),
+		FileWorkerCount: getIntEnv("FILE_WORKER_COUNT", 2),
+		FileWorkerPoll:  getDurationEnv("FILE_WORKER_POLL", time.Second),
 	}
 }
 
@@ -58,6 +62,19 @@ func getInt64Env(key string, fallback int64) int64 {
 	}
 
 	parsed, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getIntEnv(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.Atoi(value)
 	if err != nil {
 		return fallback
 	}

@@ -16,7 +16,12 @@ import (
 	"github.com/google/uuid"
 )
 
-const StatusPending = "pending"
+const (
+	StatusPending    = "pending"
+	StatusProcessing = "processing"
+	StatusReady      = "ready"
+	StatusFailed     = "failed"
+)
 
 var ErrEmptyFile = errors.New("file is empty")
 

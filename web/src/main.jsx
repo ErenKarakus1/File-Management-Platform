@@ -229,7 +229,7 @@ function App() {
               </div>
               <StatusPill status={file.status} />
               <span>{formatBytes(file.size_bytes)}</span>
-              <code title={file.checksum_sha256 || ""}>{file.checksum_sha256 ? shortChecksum(file.checksum_sha256) : "pending"}</code>
+              <code title={file.checksum_sha256 || ""}>{checksumLabel(file)}</code>
               <div className="row-actions">
                 <a className={`icon-button ${file.status !== "ready" ? "disabled" : ""}`} title="Download file" href={file.status === "ready" ? `${API_BASE}/files/${file.id}/download` : undefined}>
                   <Download size={18} />
@@ -294,6 +294,12 @@ function formatBytes(bytes) {
 
 function shortChecksum(checksum) {
   return `${checksum.slice(0, 10)}...${checksum.slice(-6)}`;
+}
+
+function checksumLabel(file) {
+  if (file.checksum_sha256) return shortChecksum(file.checksum_sha256);
+  if (file.status === "failed") return "unavailable";
+  return "pending";
 }
 
 createRoot(document.getElementById("root")).render(<App />);

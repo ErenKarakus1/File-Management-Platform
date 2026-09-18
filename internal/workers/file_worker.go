@@ -107,6 +107,9 @@ func (w *FileWorker) processNextPending(ctx context.Context) error {
 
 	checksum, err := calculateSHA256(file.StoragePath)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			_ = os.Remove(filepath.Dir(file.StoragePath))
+		}
 		if markErr := w.files.MarkFailed(ctx, file.ID); markErr != nil {
 			return markErr
 		}

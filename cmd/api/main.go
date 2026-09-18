@@ -30,6 +30,9 @@ func main() {
 		log.Fatalf("connect database: %v", err)
 	}
 	defer db.Close()
+	if err := database.RunMigrations(ctx, db); err != nil {
+		log.Fatalf("run migrations: %v", err)
+	}
 
 	redisClient := ratelimit.NewRedisClient(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
 	rateLimiter := ratelimit.NewLimiter(redisClient, cfg.RateLimit, cfg.RateLimitWindow)

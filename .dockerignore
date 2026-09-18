@@ -1,0 +1,9 @@
+.git
+.env
+storage
+web/node_modules
+web/dist
+tmp
+bin
+*.exe
+*.test

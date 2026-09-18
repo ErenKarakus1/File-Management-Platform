@@ -69,6 +69,32 @@ func (h *Handler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"files": files})
 }
 
+func (h *Handler) Get(c *gin.Context) {
+	user, ok := auth.CurrentUser(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	fileID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid file id"})
+		return
+	}
+
+	file, err := h.service.Get(c.Request.Context(), user.ID, fileID)
+	if err != nil {
+		if errors.Is(err, repository.ErrFileNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get file"})
+		return
+	}
+
+	c.JSON(http.StatusOK, file)
+}
+
 func (h *Handler) Download(c *gin.Context) {
 	user, ok := auth.CurrentUser(c)
 	if !ok {

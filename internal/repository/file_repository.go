@@ -62,6 +62,18 @@ func (r *FileRepository) ClaimPending(ctx context.Context) (models.File, error) 
 	return file, nil
 }
 
+func (r *FileRepository) ClaimDeleting(ctx context.Context) (models.File, error) {
+	var file models.File
+	err := scanFile(r.db.QueryRow(ctx, claimDeletingFileQuery), &file)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.File{}, ErrFileNotFound
+		}
+		return models.File{}, err
+	}
+	return file, nil
+}
+
 func (r *FileRepository) GetByIDAndOwner(ctx context.Context, id uuid.UUID, ownerID uuid.UUID) (models.File, error) {
 	var file models.File
 	err := scanFile(r.db.QueryRow(ctx, getFileByIDAndOwnerQuery, id, ownerID), &file)
@@ -87,6 +99,17 @@ func (r *FileRepository) MarkReady(ctx context.Context, id uuid.UUID, checksumSH
 
 func (r *FileRepository) MarkFailed(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.Exec(ctx, markFileFailedQuery, id)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrFileNotFound
+	}
+	return nil
+}
+
+func (r *FileRepository) MarkDeleting(ctx context.Context, id uuid.UUID, ownerID uuid.UUID) error {
+	result, err := r.db.Exec(ctx, markFileDeletingQuery, id, ownerID)
 	if err != nil {
 		return err
 	}

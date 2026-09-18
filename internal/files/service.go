@@ -21,6 +21,7 @@ const (
 	StatusProcessing = "processing"
 	StatusReady      = "ready"
 	StatusFailed     = "failed"
+	StatusDeleting   = "deleting"
 )
 
 var ErrEmptyFile = errors.New("file is empty")
@@ -109,6 +110,10 @@ func (s *Service) List(ctx context.Context, ownerID uuid.UUID) ([]models.File, e
 	return s.files.ListByOwner(ctx, ownerID)
 }
 
+func (s *Service) Get(ctx context.Context, ownerID uuid.UUID, fileID uuid.UUID) (models.File, error) {
+	return s.files.GetByIDAndOwner(ctx, fileID, ownerID)
+}
+
 func (s *Service) GetDownload(ctx context.Context, ownerID uuid.UUID, fileID uuid.UUID) (models.File, error) {
 	file, err := s.files.GetByIDAndOwner(ctx, fileID, ownerID)
 	if err != nil {
@@ -121,16 +126,7 @@ func (s *Service) GetDownload(ctx context.Context, ownerID uuid.UUID, fileID uui
 }
 
 func (s *Service) Delete(ctx context.Context, ownerID uuid.UUID, fileID uuid.UUID) error {
-	file, err := s.files.GetByIDAndOwner(ctx, fileID, ownerID)
-	if err != nil {
-		return err
-	}
-
-	if err := os.Remove(file.StoragePath); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
-	return s.files.DeleteByIDAndOwner(ctx, fileID, ownerID)
+	return s.files.MarkDeleting(ctx, fileID, ownerID)
 }
 
 func sanitizeOriginalName(name string) string {

@@ -65,6 +65,13 @@ const deleteFileByIDAndOwnerQuery = `
 	where id = $1 and owner_id = $2
 `
 
+const markFileDeletingQuery = `
+	update files
+	set status = 'deleting',
+		updated_at = now()
+	where id = $1 and owner_id = $2
+`
+
 const claimPendingFileQuery = `
 	update files
 	set status = 'processing',
@@ -74,6 +81,31 @@ const claimPendingFileQuery = `
 		from files
 		where status = 'pending'
 		order by created_at
+		for update skip locked
+		limit 1
+	)
+	returning
+		id,
+		owner_id,
+		original_name,
+		storage_path,
+		content_type,
+		size_bytes,
+		checksum_sha256,
+		status,
+		processed_at,
+		created_at,
+		updated_at
+`
+
+const claimDeletingFileQuery = `
+	update files
+	set updated_at = now()
+	where id = (
+		select id
+		from files
+		where status = 'deleting'
+		order by updated_at
 		for update skip locked
 		limit 1
 	)

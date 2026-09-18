@@ -68,6 +68,12 @@ func (w *FileWorker) run(ctx context.Context, workerID int) {
 }
 
 func (w *FileWorker) processNext(ctx context.Context) error {
+	if err := w.processNextDelete(ctx); err == nil {
+		return nil
+	} else if !errors.Is(err, repository.ErrFileNotFound) {
+		return err
+	}
+
 	file, err := w.files.ClaimPending(ctx)
 	if err != nil {
 		return err
@@ -82,6 +88,19 @@ func (w *FileWorker) processNext(ctx context.Context) error {
 	}
 
 	return w.files.MarkReady(ctx, file.ID, checksum)
+}
+
+func (w *FileWorker) processNextDelete(ctx context.Context) error {
+	file, err := w.files.ClaimDeleting(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := os.Remove(file.StoragePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	return w.files.DeleteByIDAndOwner(ctx, file.ID, file.OwnerID)
 }
 
 func calculateSHA256(path string) (string, error) {

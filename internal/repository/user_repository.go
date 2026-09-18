@@ -25,11 +25,7 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 }
 
 func (r *UserRepository) Create(ctx context.Context, user models.User) (models.User, error) {
-	err := r.db.QueryRow(ctx, `
-		insert into users (id, name, email, password_hash)
-		values ($1, $2, $3, $4)
-		returning id, name, email, password_hash, created_at, updated_at
-	`, user.ID, user.Name, user.Email, user.PasswordHash).Scan(
+	err := r.db.QueryRow(ctx, createUserQuery, user.ID, user.Name, user.Email, user.PasswordHash).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -49,11 +45,7 @@ func (r *UserRepository) Create(ctx context.Context, user models.User) (models.U
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (models.User, error) {
 	var user models.User
-	err := r.db.QueryRow(ctx, `
-		select id, name, email, password_hash, created_at, updated_at
-		from users
-		where email = $1
-	`, email).Scan(
+	err := r.db.QueryRow(ctx, getUserByEmailQuery, email).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -72,11 +64,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (models.U
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (models.User, error) {
 	var user models.User
-	err := r.db.QueryRow(ctx, `
-		select id, name, email, password_hash, created_at, updated_at
-		from users
-		where id = $1
-	`, id).Scan(
+	err := r.db.QueryRow(ctx, getUserByIDQuery, id).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,

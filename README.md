@@ -22,8 +22,6 @@ flowchart LR
 
     Workers[File Workers] --> Postgres
     Workers --> Storage
-
-    API --> Workers
 ```
 
 ## Project Structure

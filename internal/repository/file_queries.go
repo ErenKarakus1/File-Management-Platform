@@ -20,6 +20,7 @@ const createFileQuery = `
 		size_bytes,
 		checksum_sha256,
 		status,
+		processed_at,
 		created_at,
 		updated_at
 `
@@ -34,6 +35,7 @@ const listFilesByOwnerQuery = `
 		size_bytes,
 		checksum_sha256,
 		status,
+		processed_at,
 		created_at,
 		updated_at
 	from files

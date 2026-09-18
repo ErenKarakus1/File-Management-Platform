@@ -36,6 +36,7 @@ func (r *FileRepository) Create(ctx context.Context, file models.File) (models.F
 		&file.SizeBytes,
 		&file.ChecksumSHA256,
 		&file.Status,
+		&file.ProcessedAt,
 		&file.CreatedAt,
 		&file.UpdatedAt,
 	)
@@ -61,6 +62,7 @@ func (r *FileRepository) ListByOwner(ctx context.Context, ownerID uuid.UUID) ([]
 			&file.SizeBytes,
 			&file.ChecksumSHA256,
 			&file.Status,
+			&file.ProcessedAt,
 			&file.CreatedAt,
 			&file.UpdatedAt,
 		); err != nil {

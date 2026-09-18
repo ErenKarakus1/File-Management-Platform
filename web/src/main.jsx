@@ -51,6 +51,12 @@ function App() {
     return () => window.clearInterval(interval);
   }, [user]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
   function saveToken(nextToken) {
     localStorage.setItem(tokenKey, nextToken);
     setToken(nextToken);
